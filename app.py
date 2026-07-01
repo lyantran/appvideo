@@ -260,6 +260,21 @@ def _get_secret(key):
     return os.environ.get(key, "")
 
 
+def smtp_status_caption():
+    """Hiển thị trạng thái đọc SMTP secrets để tự chẩn đoán — không lộ mật khẩu."""
+    email = _get_secret("SMTP_EMAIL")
+    pwd = _get_secret("SMTP_PASSWORD")
+    if email and pwd:
+        masked = (email[:3] + "***@" + email.split("@")[-1]) if "@" in email else "***"
+        st.caption(f"📡 SMTP: **đã cấu hình** (gửi từ `{masked}`) — email OTP sẽ được gửi thật.")
+    elif email and not pwd:
+        st.caption("📡 SMTP: đọc được `SMTP_EMAIL` nhưng **thiếu `SMTP_PASSWORD`** trong secrets.toml.")
+    elif pwd and not email:
+        st.caption("📡 SMTP: đọc được `SMTP_PASSWORD` nhưng **thiếu `SMTP_EMAIL`** trong secrets.toml.")
+    else:
+        st.caption("📡 SMTP: **chưa đọc được cấu hình nào** — kiểm tra file `.streamlit/secrets.toml` có đúng vị trí và đã khởi động lại app chưa.")
+
+
 def send_verification_email(code, username, to_email=ADMIN_VERIFICATION_EMAIL):
     """Gửi email chứa mã OTP qua Gmail SMTP. Cần cấu hình SMTP_EMAIL / SMTP_PASSWORD
     (App Password của Gmail) trong st.secrets hoặc biến môi trường."""
@@ -438,6 +453,7 @@ if menu == "🏠 TRANG CHỦ":
                     st.rerun()
         else:
             st.subheader("🔐 Thành viên")
+            smtp_status_caption()
             tab_login, tab_register = st.tabs(["Đăng nhập", "Đăng ký"])
 
             with tab_login:
